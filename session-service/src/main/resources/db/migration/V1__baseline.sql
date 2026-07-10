@@ -1,0 +1,2 @@
+-- Session Service schema baseline
+-- Tables will be added in subsequent migrations

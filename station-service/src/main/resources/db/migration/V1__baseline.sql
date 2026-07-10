@@ -1,0 +1,2 @@
+-- Station Service schema baseline
+-- Tables will be added in subsequent migrations
