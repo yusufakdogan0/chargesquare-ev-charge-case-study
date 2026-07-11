@@ -83,6 +83,10 @@ Starts on `http://localhost:8082`.
 | GET | `/actuator/health` | Health check (Actuator) |
 | GET | `/swagger-ui.html` | Swagger UI |
 | GET | `/v3/api-docs` | OpenAPI spec (JSON) |
+| GET | `/stations` | List all stations |
+| GET | `/stations/{id}` | Get station by ID with connectors |
+| GET | `/stations/{id}/connectors` | List connectors for a station |
+| GET | `/connectors/{id}` | Get connector by ID with tariff |
 
 ### Session Service (`http://localhost:8082`)
 
@@ -153,8 +157,12 @@ cd session-service
 | Station | `TariffRepositoryTest` | 3 | CRUD, seed data, decimal precision (NUMERIC) |
 | Station | `StationRepositoryTest` | 2 | CRUD, seed data |
 | Station | `ConnectorRepositoryTest` | 7 | CRUD, `findAllByStationId`, enum as STRING, decimal precision, lazy loading |
+| Station | `StationServiceTest` | 3 | Business logic, mock repository, 404 handling |
+| Station | `ConnectorServiceTest` | 4 | Business logic, mock repository, 404 handling |
+| Station | `StationControllerTest` | 6 | `@WebMvcTest`, mock facade, valid response JSON, ProblemDetail mapping |
+| Station | `ConnectorControllerTest` | 2 | `@WebMvcTest`, mock facade, valid response JSON, ProblemDetail mapping |
 | Station | `StationServiceApplicationTests` | 1 | Spring context loads |
 | Session | `UserRepositoryTest` | 8 | CRUD, `findByUsername`, `existsByUsername`, role enum, wallet precision, unique constraint |
 | Session | `ChargingSessionRepositoryTest` | 9 | CRUD, `findAllByUserId`, status enum, decimal precision, timestamps, lazy loading |
 | Session | `SessionServiceApplicationTests` | 1 | Spring context loads |
-| **Total** | | **31** | |
+| **Total** | | **46** | |
