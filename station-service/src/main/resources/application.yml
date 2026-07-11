@@ -41,6 +41,10 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
+# ── JWT ──
+jwt:
+  secret: ${JWT_SECRET:changeme-use-a-long-random-string-in-production-at-least-256-bits}
+
 # ── Logging ──
 logging:
   level:

@@ -8,6 +8,7 @@ A backend system for EV charging session management, built with **Java 21** and 
 |---|---|
 | Language | Java 21 |
 | Framework | Spring Boot 3.5.16 |
+| Security | Spring Security + JWT |
 | Database | PostgreSQL 16 |
 | Migrations | Flyway |
 | API Docs | SpringDoc OpenAPI (Swagger UI) |
@@ -32,7 +33,57 @@ chargesquare-ev-charge-case-study/
 Two Spring Boot services share a single PostgreSQL database (`chargesquare`), each owning its own schema:
 
 - **Station Service** (`station` schema, port `8081`) — source of truth for charging stations, connectors, and tariffs.
-- **Session Service** (`session` schema, port `8082`) — charging sessions, users, and wallets. Calls Station Service over REST.
+- **Session Service** (`session` schema, port `8082`) — charging sessions, users, wallets, and authentication. Calls Station Service over REST.
+
+## Authentication & Authorization
+
+The system uses **JWT (JSON Web Tokens)** for stateless authentication with two roles:
+
+- **ADMIN** — Full access to all endpoints
+- **VIEWER** — Read-only access
+
+### Default Users
+
+| Username | Password | Role | Wallet Balance |
+|---|---|---|---|
+| `admin` | `admin123` | ADMIN | 500.00 |
+| `viewer` | `viewer123` | VIEWER | 500.00 |
+
+### Getting a Token
+
+Send a POST request to Session Service's login endpoint:
+
+```bash
+curl -X POST http://localhost:8082/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
+```
+
+Response:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600
+}
+```
+
+### Using the Token
+
+Include the JWT in the `Authorization` header for protected endpoints:
+
+```bash
+curl http://localhost:8081/stations \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
+```
+
+### Swagger UI with JWT
+
+Both services' Swagger UIs support JWT authentication:
+1. Open `http://localhost:8081/swagger-ui.html` or `http://localhost:8082/swagger-ui.html`
+2. Click the **Authorize** button
+3. Enter your JWT token and click **Authorize**
+4. All subsequent requests will include the token
 
 ## Prerequisites
 
@@ -78,23 +129,24 @@ Starts on `http://localhost:8082`.
 
 ### Station Service (`http://localhost:8081`)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/actuator/health` | Health check (Actuator) |
-| GET | `/swagger-ui.html` | Swagger UI |
-| GET | `/v3/api-docs` | OpenAPI spec (JSON) |
-| GET | `/stations` | List all stations |
-| GET | `/stations/{id}` | Get station by ID with connectors |
-| GET | `/stations/{id}/connectors` | List connectors for a station |
-| GET | `/connectors/{id}` | Get connector by ID with tariff |
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/actuator/health` | Health check (Actuator) | No |
+| GET | `/swagger-ui.html` | Swagger UI | No |
+| GET | `/v3/api-docs` | OpenAPI spec (JSON) | No |
+| GET | `/stations` | List all stations | Yes |
+| GET | `/stations/{id}` | Get station by ID with connectors | Yes |
+| GET | `/stations/{id}/connectors` | List connectors for a station | Yes |
+| GET | `/connectors/{id}` | Get connector by ID with tariff | Yes |
 
 ### Session Service (`http://localhost:8082`)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/actuator/health` | Health check (Actuator) |
-| GET | `/swagger-ui.html` | Swagger UI |
-| GET | `/v3/api-docs` | OpenAPI spec (JSON) |
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| GET | `/actuator/health` | Health check (Actuator) | No |
+| GET | `/swagger-ui.html` | Swagger UI | No |
+| GET | `/v3/api-docs` | OpenAPI spec (JSON) | No |
+| POST | `/auth/login` | Login and get JWT token | No |
 
 ## Configuration
 
@@ -104,7 +156,8 @@ All configuration is driven by environment variables with sensible defaults for 
 |---|---|---|
 | `POSTGRES_USER` | `postgres` | PostgreSQL username |
 | `POSTGRES_PASSWORD` | — | PostgreSQL password |
-| `JWT_SECRET` | — | JWT signing key |
+| `JWT_SECRET` | — | JWT signing key (at least 256 bits for production) |
+| `JWT_EXPIRATION` | `3600000` | JWT expiration in milliseconds (default 1 hour) |
 | `SERVER_PORT` | `8081` / `8082` | Service port |
 | `STATION_SERVICE_URL` | `http://localhost:8081` | Station Service base URL (Session Service only) |
 
@@ -133,6 +186,15 @@ Seed data: 1 station ("ChargeSquare Downtown"), 2 tariffs, 2 connectors (CCS2-DC
 |---|---|
 | `users` | Drivers — `username`, `password` (BCrypt), `role`, `wallet_balance` |
 | `charging_sessions` | Core domain — lifecycle state, timestamps, cost, tariff snapshot |
+
+## Security Implementation Details
+
+- **Stateless Authentication**: No server-side sessions, all state is in the JWT
+- **BCrypt Password Encoding**: All passwords are securely hashed
+- **JWT Claims**: Contains `userId`, `username`, `role`, `iat` (issued at), and `exp` (expiration)
+- **CSRF Disabled**: Not needed for stateless APIs
+- **CORS Configured**: Ready for frontend integration
+- **Role-based Access Control**: Endpoints can be secured with `@PreAuthorize` annotations
 
 ## Testing
 
@@ -165,4 +227,5 @@ cd session-service
 | Session | `UserRepositoryTest` | 8 | CRUD, `findByUsername`, `existsByUsername`, role enum, wallet precision, unique constraint |
 | Session | `ChargingSessionRepositoryTest` | 9 | CRUD, `findAllByUserId`, status enum, decimal precision, timestamps, lazy loading |
 | Session | `SessionServiceApplicationTests` | 1 | Spring context loads |
-| **Total** | | **46** | |
+| Session | `JwtServiceTest` | 6 | Token generation, validation, claims extraction |
+| **Total** | | **52** | |

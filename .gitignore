@@ -38,3 +38,8 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+
+# Ai dev helpers
+implementation_plan.md
+project.txt
