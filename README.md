@@ -13,6 +13,7 @@ A backend system for EV charging session management, built with **Java 21** and 
 | API Docs | SpringDoc OpenAPI (Swagger UI) |
 | Build | Gradle 8.14 |
 | Containers | Docker / Docker Compose |
+| Testing | JUnit 5, Testcontainers, AssertJ |
 
 ## Project Structure
 
@@ -97,10 +98,9 @@ All configuration is driven by environment variables with sensible defaults for 
 
 | Variable | Default | Description |
 |---|---|---|
-| `DB_USER` | `postgres` | PostgreSQL username |
-| `DB_PASSWORD` | — | PostgreSQL password |
+| `POSTGRES_USER` | `postgres` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | — | PostgreSQL password |
 | `JWT_SECRET` | — | JWT signing key |
-| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/chargesquare` | JDBC URL |
 | `SERVER_PORT` | `8081` / `8082` | Service port |
 | `STATION_SERVICE_URL` | `http://localhost:8081` | Station Service base URL (Session Service only) |
 
@@ -112,3 +112,49 @@ Single PostgreSQL instance with schema-based separation:
 - `session` schema — managed by Session Service's Flyway migrations
 
 Flyway runs automatically on startup, creating and migrating tables from scratch.
+
+### Station Schema
+
+| Table | Description |
+|---|---|
+| `tariffs` | Pricing rules — `price_per_kwh`, `start_fee`, `currency` |
+| `stations` | Physical charging locations |
+| `connectors` | Individual EVSEs at a station — `type`, `power_kw`, `status` |
+
+Seed data: 1 station ("ChargeSquare Downtown"), 2 tariffs, 2 connectors (CCS2-DC 60kW, Type2-AC 22kW).
+
+### Session Schema
+
+| Table | Description |
+|---|---|
+| `users` | Drivers — `username`, `password` (BCrypt), `role`, `wallet_balance` |
+| `charging_sessions` | Core domain — lifecycle state, timestamps, cost, tariff snapshot |
+
+## Testing
+
+Tests use **Testcontainers** to run against a real PostgreSQL instance — no mocks, no H2.
+
+### Run all tests
+
+```bash
+# Station Service
+cd station-service
+./gradlew test
+
+# Session Service
+cd session-service
+./gradlew test
+```
+
+### Test coverage
+
+| Service | Test Class | Tests | What's covered |
+|---|---|---|---|
+| Station | `TariffRepositoryTest` | 3 | CRUD, seed data, decimal precision (NUMERIC) |
+| Station | `StationRepositoryTest` | 2 | CRUD, seed data |
+| Station | `ConnectorRepositoryTest` | 7 | CRUD, `findAllByStationId`, enum as STRING, decimal precision, lazy loading |
+| Station | `StationServiceApplicationTests` | 1 | Spring context loads |
+| Session | `UserRepositoryTest` | 8 | CRUD, `findByUsername`, `existsByUsername`, role enum, wallet precision, unique constraint |
+| Session | `ChargingSessionRepositoryTest` | 9 | CRUD, `findAllByUserId`, status enum, decimal precision, timestamps, lazy loading |
+| Session | `SessionServiceApplicationTests` | 1 | Spring context loads |
+| **Total** | | **31** | |
