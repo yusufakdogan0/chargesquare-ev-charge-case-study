@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ConnectorController.class)
 @Import(GlobalExceptionHandler.class)
+@org.springframework.security.test.context.support.WithMockUser
 class ConnectorControllerTest {
 
     @Autowired
@@ -30,6 +31,9 @@ class ConnectorControllerTest {
 
     @MockitoBean
     private StationFacade stationFacade;
+
+    @MockitoBean
+    private com.yusufakdogan.station_service.security.JwtService jwtService;
 
     // ── GET /connectors/{id} ──
 

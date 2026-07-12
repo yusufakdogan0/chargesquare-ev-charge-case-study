@@ -54,4 +54,23 @@ public class StationServiceClient {
             throw e;
         }
     }
+
+    public StationConnectorResponse releaseConnector(Long connectorId, String bearerToken) {
+        try {
+            RestClient client = restClientBuilder.baseUrl(stationServiceUrl).build();
+            return client.patch()
+                    .uri("/connectors/{id}/release", connectorId)
+                    .header("Authorization", "Bearer " + bearerToken)
+                    .retrieve()
+                    .body(StationConnectorResponse.class);
+        } catch (HttpClientErrorException e) {
+            HttpStatusCode statusCode = e.getStatusCode();
+            if (statusCode == HttpStatus.NOT_FOUND) {
+                throw new ResourceNotFoundException("Connector not found with id: " + connectorId);
+            } else if (statusCode == HttpStatus.CONFLICT) {
+                throw new ConnectorOccupiedException("Connector " + connectorId + " is already available");
+            }
+            throw e;
+        }
+    }
 }

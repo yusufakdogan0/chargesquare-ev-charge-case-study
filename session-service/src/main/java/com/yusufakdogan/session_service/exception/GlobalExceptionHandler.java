@@ -42,4 +42,12 @@ public class GlobalExceptionHandler {
         problem.setTitle("Conflict");
         return problem;
     }
+
+    @ExceptionHandler(SessionNotActiveException.class)
+    public ProblemDetail handleSessionNotActive(SessionNotActiveException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Conflict");
+        return problem;
+    }
 }

@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(StationController.class)
 @Import(GlobalExceptionHandler.class)
+@org.springframework.security.test.context.support.WithMockUser
 class StationControllerTest {
 
     @Autowired
@@ -34,6 +35,9 @@ class StationControllerTest {
 
     @MockitoBean
     private StationFacade stationFacade;
+
+    @MockitoBean
+    private com.yusufakdogan.station_service.security.JwtService jwtService;
 
     private final TariffResponse tariff = new TariffResponse(
             1L, new BigDecimal("8.5000"), new BigDecimal("2.00"), "TRY");

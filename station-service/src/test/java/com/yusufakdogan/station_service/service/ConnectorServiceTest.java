@@ -16,8 +16,12 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import com.yusufakdogan.station_service.exception.ConnectorOccupiedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,5 +93,38 @@ class ConnectorServiceTest {
         assertThatThrownBy(() -> connectorService.findById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Connector not found with id: 999");
+    }
+
+    @Test
+    void releaseConnector_shouldSetStatusToAvailable_whenOccupied() {
+        Connector connector = createConnector(1L);
+        connector.setStatus(ConnectorStatus.OCCUPIED);
+        when(connectorRepository.findById(1L)).thenReturn(Optional.of(connector));
+        when(connectorRepository.save(any(Connector.class))).thenReturn(connector);
+
+        Connector result = connectorService.releaseConnector(1L);
+
+        assertThat(result.getStatus()).isEqualTo(ConnectorStatus.AVAILABLE);
+        verify(connectorRepository).save(connector);
+    }
+
+    @Test
+    void releaseConnector_shouldThrowException_whenAlreadyAvailable() {
+        Connector connector = createConnector(1L);
+        connector.setStatus(ConnectorStatus.AVAILABLE);
+        when(connectorRepository.findById(1L)).thenReturn(Optional.of(connector));
+
+        assertThatThrownBy(() -> connectorService.releaseConnector(1L))
+                .isInstanceOf(ConnectorOccupiedException.class);
+
+        verify(connectorRepository, never()).save(any(Connector.class));
+    }
+
+    @Test
+    void releaseConnector_shouldThrowResourceNotFoundException_whenNotExists() {
+        when(connectorRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> connectorService.releaseConnector(999L))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

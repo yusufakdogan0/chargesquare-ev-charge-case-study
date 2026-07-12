@@ -52,4 +52,10 @@ public class StationFacade {
         Connector connector = connectorService.occupyConnector(id);
         return connectorMapper.toResponse(connector);
     }
+
+    @Transactional
+    public ConnectorResponse releaseConnector(Long id) {
+        Connector connector = connectorService.releaseConnector(id);
+        return connectorMapper.toResponse(connector);
+    }
 }

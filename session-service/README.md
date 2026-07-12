@@ -30,6 +30,10 @@ This service manages users, charging sessions, and handles authentication/author
 | GET | /v3/api-docs | OpenAPI spec | No |
 | POST | /auth/login | Authenticate and obtain JWT | No |
 | POST | /sessions/start | Start a new charging session (Admin only) | Yes |
+| POST | /sessions/{id}/stop | Stop charging session, calculate cost, debit wallet (Admin only) | Yes |
+| GET | /sessions/{id} | Get session by ID | Yes |
+| GET | /users/{userId}/sessions | Get all sessions for a user | Yes |
+| PUT | /users/{userId}/wallet/top-up | Top up user wallet (Admin only) | Yes |
 
 ## How to Authenticate
 1. Send a POST to /auth/login with username and password to get accessToken

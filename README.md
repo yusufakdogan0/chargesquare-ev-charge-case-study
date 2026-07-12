@@ -137,6 +137,7 @@ Starts on `http://localhost:8082` (see [session-service/README.md](session-servi
 | GET | `/stations/{id}/connectors` | List connectors for a station | Yes |
 | GET | `/connectors/{id}` | Get connector by ID with tariff | Yes |
 | PATCH | `/connectors/{id}/occupy` | Mark connector as occupied (Admin only) | Yes |
+| PATCH | `/connectors/{id}/release` | Mark connector as available (Admin only) | Yes |
 
 ### Session Service (`http://localhost:8082`)
 
@@ -147,6 +148,10 @@ Starts on `http://localhost:8082` (see [session-service/README.md](session-servi
 | GET | `/v3/api-docs` | OpenAPI spec (JSON) | No |
 | POST | `/auth/login` | Login and get JWT token | No |
 | POST | `/sessions/start` | Start new charging session (Admin only) | Yes |
+| POST | `/sessions/{id}/stop` | Stop charging session, calculate cost, debit wallet (Admin only) | Yes |
+| GET | `/sessions/{id}` | Get session by ID | Yes |
+| GET | `/users/{userId}/sessions` | Get all sessions for a user | Yes |
+| PUT | `/users/{userId}/wallet/top-up` | Top up user wallet (Admin only) | Yes |
 
 ## Configuration
 
@@ -220,7 +225,15 @@ cd session-service
 | Station | `StationRepositoryTest` | 2 | CRUD, seed data |
 | Station | `ConnectorRepositoryTest` | 7 | CRUD, `findAllByStationId`, enum as STRING, decimal precision, lazy loading |
 | Station | `StationServiceTest` | 3 | Business logic, mock repository, 404 handling |
-| Station | `ConnectorServiceTest` | 4 | Business logic, mock repository, 404 handling |
+| Station | `ConnectorServiceTest` | 7 | Business logic, mock repository, 404 handling, occupy/release connector |
+| Session | `ChargingSessionRepositoryTest` | 10 | CRUD, status enum, timezone, decimal precision, lazy loading user |
+| Session | `UserRepositoryTest` | 9 | CRUD, unique username, wallet balance precision, role enum |
+| Session | `CostCalculatorTest` | 6 | BigDecimal math, zero start fee, zero energy, large numbers, half-up rounding |
+| Session | `SessionServiceTest` | 6 | Business logic, non-active session check, zero balance rejection |
+| Session | `WalletServiceTest` | 7 | Top up, debit, negative balance check, 404 handling |
+| Session | `JwtServiceTest` | 6 | Token generation, validation, role and userId extraction |
+| Session | `SessionFacadeTest` | 3 | Full orchestration, stop session calculation, debiting |
+| Session | `SessionControllerSecurityTest` | 3 | Unauthorized scenarios, role-based access control, invalid tokens |
 | Station | `StationControllerTest` | 6 | `@WebMvcTest`, mock facade, valid response JSON, ProblemDetail mapping |
 | Station | `ConnectorControllerTest` | 2 | `@WebMvcTest`, mock facade, valid response JSON, ProblemDetail mapping |
 | Station | `StationServiceApplicationTests` | 1 | Spring context loads |
@@ -228,4 +241,9 @@ cd session-service
 | Session | `ChargingSessionRepositoryTest` | 9 | CRUD, `findAllByUserId`, status enum, decimal precision, timestamps, lazy loading |
 | Session | `SessionServiceApplicationTests` | 1 | Spring context loads |
 | Session | `JwtServiceTest` | 6 | Token generation, validation, claims extraction |
-| **Total** | | **52** | |
+| Session | `SessionServiceTest` | 5 | Session creation, completion, retrieval, user sessions, negative balance check |
+| Session | `CostCalculatorTest` | 6 | Cost calculation with rounding, required worked example (12.5 kWh × 8.50/kWh + 2.00 = 108.25) |
+| Session | `WalletServiceTest` | 7 | Debit, top-up, get balance, negative balance handling |
+| Session | `SessionFacadeTest` | 3 | Stop session flow orchestration, session retrieval |
+| Session | `SessionControllerSecurityTest` | 1 | Security configuration test |
+| **Total** | | **68** | |

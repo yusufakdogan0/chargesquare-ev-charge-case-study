@@ -27,6 +27,7 @@ This service manages charging stations, connectors, and tariffs.
 | GET | /stations/{id}/connectors | List connectors for a station | Yes |
 | GET | /connectors/{id} | Get connector by ID with tariff | Yes |
 | PATCH | /connectors/{id}/occupy | Mark connector as occupied (Admin only) | Yes |
+| PATCH | /connectors/{id}/release | Mark connector as available (Admin only) | Yes |
 
 ## Configuration
 All configuration via environment variables (see root README's .env.example file).

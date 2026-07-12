@@ -41,4 +41,17 @@ public class ConnectorController {
     public ConnectorResponse occupyConnector(@PathVariable Long id) {
         return stationFacade.occupyConnector(id);
     }
+
+    @PatchMapping("/{id}/release")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Release connector",
+            description = "Marks a connector as AVAILABLE.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Connector released successfully"),
+            @ApiResponse(responseCode = "404", description = "Connector not found"),
+            @ApiResponse(responseCode = "409", description = "Connector already available")
+    })
+    public ConnectorResponse releaseConnector(@PathVariable Long id) {
+        return stationFacade.releaseConnector(id);
+    }
 }

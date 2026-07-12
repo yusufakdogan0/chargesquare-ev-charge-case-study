@@ -39,4 +39,17 @@ public class ConnectorService {
         connector.setStatus(ConnectorStatus.OCCUPIED);
         return connectorRepository.save(connector);
     }
+
+    @Transactional
+    public Connector releaseConnector(Long id) {
+        Connector connector = findById(id);
+        
+        if (connector.getStatus() == ConnectorStatus.AVAILABLE) {
+            throw new ConnectorOccupiedException(
+                    "Connector " + id + " is already available");
+        }
+        
+        connector.setStatus(ConnectorStatus.AVAILABLE);
+        return connectorRepository.save(connector);
+    }
 }
