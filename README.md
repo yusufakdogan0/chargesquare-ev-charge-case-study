@@ -20,8 +20,8 @@ A backend system for EV charging session management, built with **Java 21** and 
 
 ```
 chargesquare-ev-charge-case-study/
-├── station-service/          # Stations, connectors, tariffs
-├── session-service/          # Charging sessions, users, wallets
+├── station-service/          # Stations, connectors, tariffs (own README.md)
+├── session-service/          # Charging sessions, users, auth (own README.md)
 ├── docker-compose.yml        # PostgreSQL + services
 ├── init-db.sh                # Creates DB schemas (station, session)
 ├── .env.example              # Environment variable template
@@ -113,8 +113,7 @@ This creates the `chargesquare` database with `station` and `session` schemas.
 cd station-service
 ./gradlew bootRun
 ```
-
-Starts on `http://localhost:8081`.
+Starts on `http://localhost:8081` (see [station-service/README.md](station-service/README.md) for more details).
 
 ### 4. Start Session Service
 
@@ -122,8 +121,7 @@ Starts on `http://localhost:8081`.
 cd session-service
 ./gradlew bootRun
 ```
-
-Starts on `http://localhost:8082`.
+Starts on `http://localhost:8082` (see [session-service/README.md](session-service/README.md) for more details).
 
 ## Available Endpoints
 
@@ -138,6 +136,7 @@ Starts on `http://localhost:8082`.
 | GET | `/stations/{id}` | Get station by ID with connectors | Yes |
 | GET | `/stations/{id}/connectors` | List connectors for a station | Yes |
 | GET | `/connectors/{id}` | Get connector by ID with tariff | Yes |
+| PATCH | `/connectors/{id}/occupy` | Mark connector as occupied (Admin only) | Yes |
 
 ### Session Service (`http://localhost:8082`)
 
@@ -147,6 +146,7 @@ Starts on `http://localhost:8082`.
 | GET | `/swagger-ui.html` | Swagger UI | No |
 | GET | `/v3/api-docs` | OpenAPI spec (JSON) | No |
 | POST | `/auth/login` | Login and get JWT token | No |
+| POST | `/sessions/start` | Start new charging session (Admin only) | Yes |
 
 ## Configuration
 

@@ -1,4 +1,4 @@
-package com.yusufakdogan.station_service.exception;
+package com.yusufakdogan.session_service.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;

@@ -1,10 +1,13 @@
 package com.yusufakdogan.station_service.service;
 
 import com.yusufakdogan.station_service.entity.Connector;
+import com.yusufakdogan.station_service.entity.enums.ConnectorStatus;
+import com.yusufakdogan.station_service.exception.ConnectorOccupiedException;
 import com.yusufakdogan.station_service.exception.ResourceNotFoundException;
 import com.yusufakdogan.station_service.repository.ConnectorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,5 +25,18 @@ public class ConnectorService {
         return connectorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Connector not found with id: " + id));
+    }
+
+    @Transactional
+    public Connector occupyConnector(Long id) {
+        Connector connector = findById(id);
+        
+        if (connector.getStatus() == ConnectorStatus.OCCUPIED) {
+            throw new ConnectorOccupiedException(
+                    "Connector " + id + " is already occupied");
+        }
+        
+        connector.setStatus(ConnectorStatus.OCCUPIED);
+        return connectorRepository.save(connector);
     }
 }

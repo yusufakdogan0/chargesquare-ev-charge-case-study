@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:changeme-use-a-long-random-string-in-production-at-least-256-bits}")
+    @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration:3600000}")
@@ -32,7 +32,10 @@ public class JwtService {
     }
 
     public Long extractUserId(String token) {
-        return extractClaim(token, claims -> claims.get("userId", Long.class));
+        return extractClaim(token, claims -> {
+            Number userId = claims.get("userId", Number.class);
+            return userId != null ? userId.longValue() : null;
+        });
     }
 
     public String extractRole(String token) {

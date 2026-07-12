@@ -14,7 +14,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:changeme-use-a-long-random-string-in-production-at-least-256-bits}")
+    @Value("${jwt.secret}")
     private String secret;
 
     private SecretKey getSigningKey() {
@@ -23,6 +23,13 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> {
+            Number userId = claims.get("userId", Number.class);
+            return userId != null ? userId.longValue() : null;
+        });
     }
 
     public String extractRole(String token) {
