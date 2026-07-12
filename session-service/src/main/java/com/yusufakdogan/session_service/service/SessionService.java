@@ -3,6 +3,7 @@ package com.yusufakdogan.session_service.service;
 import com.yusufakdogan.session_service.entity.ChargingSession;
 import com.yusufakdogan.session_service.entity.User;
 import com.yusufakdogan.session_service.entity.enums.SessionStatus;
+import com.yusufakdogan.session_service.exception.NegativeBalanceException;
 import com.yusufakdogan.session_service.exception.ResourceNotFoundException;
 import com.yusufakdogan.session_service.repository.ChargingSessionRepository;
 import com.yusufakdogan.session_service.repository.UserRepository;
@@ -30,6 +31,12 @@ public class SessionService {
     ) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (user.getWalletBalance().compareTo(BigDecimal.ZERO) < 0) {
+            throw new NegativeBalanceException(
+                    "User has an outstanding negative balance and must settle it before starting another session"
+            );
+        }
 
         ChargingSession session = new ChargingSession();
         session.setUser(user);

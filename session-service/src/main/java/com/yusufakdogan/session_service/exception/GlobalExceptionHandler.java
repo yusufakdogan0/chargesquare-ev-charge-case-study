@@ -34,4 +34,12 @@ public class GlobalExceptionHandler {
         problem.setTitle("Bad Request");
         return problem;
     }
+
+    @ExceptionHandler(NegativeBalanceException.class)
+    public ProblemDetail handleNegativeBalance(NegativeBalanceException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Conflict");
+        return problem;
+    }
 }

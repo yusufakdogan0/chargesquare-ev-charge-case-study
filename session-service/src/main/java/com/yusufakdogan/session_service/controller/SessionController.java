@@ -37,13 +37,16 @@ public class SessionController {
     public SessionResponse startSession(
             @Valid @RequestBody StartSessionRequest request,
             Authentication authentication,
-            @RequestHeader(value = "Authorization") String authorizationHeader
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
     ) {
         JwtAuthenticationFilter.AuthenticatedUser user = 
                 (JwtAuthenticationFilter.AuthenticatedUser) authentication.getPrincipal();
-        
-        String token = authorizationHeader.substring(7);
-        
+
+        String token = null;
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7);
+        }
+
         return sessionFacade.startSession(user.userId, request.getConnectorId(), token);
     }
 }
