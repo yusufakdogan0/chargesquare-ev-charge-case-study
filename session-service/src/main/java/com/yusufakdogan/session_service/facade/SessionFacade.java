@@ -120,11 +120,13 @@ public class SessionFacade {
         );
     }
 
+    @Transactional(readOnly = true)
     public SessionResponse getSession(Long id) {
         ChargingSession session = sessionService.getSession(id);
         return mapToSessionResponse(session, session.getUser().getWalletBalance());
     }
 
+    @Transactional(readOnly = true)
     public List<SessionResponse> getUserSessions(Long userId) {
         List<ChargingSession> sessions = sessionService.getUserSessions(userId);
         BigDecimal currentBalance = walletService.getBalance(userId);
