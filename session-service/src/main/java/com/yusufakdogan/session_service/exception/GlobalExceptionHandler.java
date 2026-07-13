@@ -35,6 +35,19 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidationExceptions(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse(ex.getMessage());
+                
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, errorMessage);
+        problem.setTitle("Bad Request");
+        return problem;
+    }
+
     @ExceptionHandler(NegativeBalanceException.class)
     public ProblemDetail handleNegativeBalance(NegativeBalanceException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(

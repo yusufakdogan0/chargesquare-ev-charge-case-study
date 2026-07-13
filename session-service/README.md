@@ -7,20 +7,23 @@ This service manages users, charging sessions, and handles authentication/author
 - Docker & Docker Compose
 
 ## Running the Service Locally
-1. Start PostgreSQL from the root directory:
+1. Start the entire stack from the root directory using Docker Compose:
    ```bash
-   docker compose up postgres -d
+   docker-compose up --build -d
    ```
-2. Run the service:
+2. Alternatively, run only the database via docker and start the service locally:
    ```bash
    ./gradlew bootRun
    ```
 
 ## Default Users
-| Username | Password | Role |
-|----------|----------|------|
-| admin    | admin123 | ADMIN |
-| viewer   | viewer123 | VIEWER |
+| Username | Password | Role | Wallet Balance |
+|----------|----------|------|----------------|
+| admin1   | admin123 | ADMIN | 500.00 |
+| admin2   | admin123 | ADMIN | 1000.00 |
+| admin3   | admin123 | ADMIN | 150.00 |
+| viewer1  | viewer123 | VIEWER | 50.00 |
+| viewer2  | viewer123 | VIEWER | 200.00 |
 
 ## Endpoints
 | Method | Endpoint | Description | Authentication Required |

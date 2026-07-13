@@ -42,7 +42,7 @@ class ConnectorRepositoryTest {
     void shouldLoadSeedConnectors() {
         List<Connector> connectors = connectorRepository.findAll();
 
-        assertThat(connectors).hasSize(2);
+        assertThat(connectors).hasSize(12);
     }
 
     @Test
@@ -82,10 +82,10 @@ class ConnectorRepositoryTest {
 
     @Test
     void shouldFindAllByStationId() {
-        // Seed data has 2 connectors for station 1
+        // Seed data has 3 connectors for station 1
         List<Connector> connectors = connectorRepository.findAllByStationId(1L);
 
-        assertThat(connectors).hasSize(2);
+        assertThat(connectors).hasSize(3);
         assertThat(connectors).allSatisfy(c ->
                 assertThat(c.getStation().getId()).isEqualTo(1L)
         );

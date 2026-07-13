@@ -7,11 +7,11 @@ This service manages charging stations, connectors, and tariffs.
 - Docker & Docker Compose
 
 ## Running the Service Locally
-1. Start PostgreSQL from the root directory:
+1. Start the entire stack from the root directory using Docker Compose:
    ```bash
-   docker compose up postgres -d
+   docker-compose up --build -d
    ```
-2. Run the service:
+2. Alternatively, run only the database via docker and start the service locally:
    ```bash
    ./gradlew bootRun
    ```

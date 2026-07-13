@@ -68,4 +68,15 @@ class SessionControllerSecurityTest {
 
         verifyNoInteractions(sessionFacade);
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void shouldReturnBadRequestForNegativeWalletTopUpAmount() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/users/1/wallet/top-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":-50.00}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.title").value("Bad Request"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.detail").value("amount: Amount must be positive"));
+    }
 }

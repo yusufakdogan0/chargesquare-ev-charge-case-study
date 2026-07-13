@@ -46,8 +46,11 @@ The system uses **JWT (JSON Web Tokens)** for stateless authentication with two 
 
 | Username | Password | Role | Wallet Balance |
 |---|---|---|---|
-| `admin` | `admin123` | ADMIN | 500.00 |
-| `viewer` | `viewer123` | VIEWER | 500.00 |
+| `admin1` | `admin123` | ADMIN | 500.00 |
+| `admin2` | `admin123` | ADMIN | 1000.00 |
+| `admin3` | `admin123` | ADMIN | 150.00 |
+| `viewer1` | `viewer123` | VIEWER | 50.00 |
+| `viewer2` | `viewer123` | VIEWER | 200.00 |
 
 ### Getting a Token
 
@@ -56,7 +59,7 @@ Send a POST request to Session Service's login endpoint:
 ```bash
 curl -X POST http://localhost:8082/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "admin1", "password": "admin123"}'
 ```
 
 Response:
@@ -87,8 +90,8 @@ Both services' Swagger UIs support JWT authentication:
 
 ## Prerequisites
 
-- Java 21
-- Docker & Docker Compose
+- Docker & Docker Compose (for running the entire stack)
+- Java 21 (for local development/testing)
 
 ## Getting Started
 
@@ -96,32 +99,28 @@ Both services' Swagger UIs support JWT authentication:
 
 ```bash
 cp .env.example .env
-# Edit .env with your values (defaults work for local dev)
+# Edit .env with your values (defaults work perfectly for local dev)
 ```
 
-### 2. Start PostgreSQL
+### 2. Start the Entire Stack
+
+The easiest way to run the database and both services is using Docker Compose:
 
 ```bash
-docker compose up postgres -d
+docker-compose up --build -d
 ```
 
-This creates the `chargesquare` database with `station` and `session` schemas.
+This will automatically:
+- Start PostgreSQL (`chargesquare` database)
+- Build and start the Station Service on `http://localhost:8081`
+- Build and start the Session Service on `http://localhost:8082`
 
-### 3. Start Station Service
-
+To view the logs:
 ```bash
-cd station-service
-./gradlew bootRun
+docker-compose logs -f
 ```
-Starts on `http://localhost:8081` (see [station-service/README.md](station-service/README.md) for more details).
 
-### 4. Start Session Service
-
-```bash
-cd session-service
-./gradlew bootRun
-```
-Starts on `http://localhost:8082` (see [session-service/README.md](session-service/README.md) for more details).
+*(Alternatively, you can start only `postgres` using Docker and run the Spring Boot services locally via `./gradlew bootRun` in their respective directories).*
 
 ## Available Endpoints
 

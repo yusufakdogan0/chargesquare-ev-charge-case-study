@@ -21,22 +21,22 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (userRepository.findByUsername("admin").isEmpty()) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setRole(Role.ADMIN);
-            admin.setWalletBalance(new BigDecimal("500.00"));
-            userRepository.save(admin);
-        }
+        createIfNotFound("admin1", "admin123", Role.ADMIN, new BigDecimal("500.00"));
+        createIfNotFound("admin2", "admin123", Role.ADMIN, new BigDecimal("1000.00"));
+        createIfNotFound("admin3", "admin123", Role.ADMIN, new BigDecimal("150.00"));
 
-        if (userRepository.findByUsername("viewer").isEmpty()) {
-            User viewer = new User();
-            viewer.setUsername("viewer");
-            viewer.setPassword(passwordEncoder.encode("viewer123"));
-            viewer.setRole(Role.VIEWER);
-            viewer.setWalletBalance(new BigDecimal("500.00"));
-            userRepository.save(viewer);
+        createIfNotFound("viewer1", "viewer123", Role.VIEWER, new BigDecimal("50.00"));
+        createIfNotFound("viewer2", "viewer123", Role.VIEWER, new BigDecimal("200.00"));
+    }
+
+    private void createIfNotFound(String username, String password, Role role, BigDecimal balance) {
+        if (userRepository.findByUsername(username).isEmpty()) {
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(password));
+            user.setRole(role);
+            user.setWalletBalance(balance);
+            userRepository.save(user);
         }
     }
 }
