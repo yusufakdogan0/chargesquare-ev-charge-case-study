@@ -41,18 +41,12 @@ public class SessionController {
     })
     public SessionResponse startSession(
             @Valid @RequestBody StartSessionRequest request,
-            Authentication authentication,
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+            Authentication authentication
     ) {
         JwtAuthenticationFilter.AuthenticatedUser user = 
                 (JwtAuthenticationFilter.AuthenticatedUser) authentication.getPrincipal();
 
-        String token = null;
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            token = authorizationHeader.substring(7);
-        }
-
-        return sessionFacade.startSession(user.userId, request.getConnectorId(), token);
+        return sessionFacade.startSession(user.userId, request.getConnectorId());
     }
 
     @PostMapping("/{id}/stop")
@@ -69,15 +63,9 @@ public class SessionController {
     })
     public SessionResponse stopSession(
             @PathVariable Long id,
-            @Valid @RequestBody StopSessionRequest request,
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+            @Valid @RequestBody StopSessionRequest request
     ) {
-        String token = null;
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            token = authorizationHeader.substring(7);
-        }
-
-        return sessionFacade.stopSession(id, request.getEnergyKwh(), token);
+        return sessionFacade.stopSession(id, request.getEnergyKwh());
     }
 
     @GetMapping("/{id}")

@@ -30,11 +30,10 @@ public class SessionFacade {
     @Transactional
     public SessionResponse startSession(
             Long userId,
-            Long connectorId,
-            String bearerToken
+            Long connectorId
     ) {
         // Step 1: Get connector from station service and validate status
-        StationConnectorResponse connector = stationServiceClient.getConnectorById(connectorId, bearerToken);
+        StationConnectorResponse connector = stationServiceClient.getConnectorById(connectorId);
         if ("OCCUPIED".equals(connector.status())) {
             throw new ConnectorOccupiedException("Connector " + connectorId + " is already occupied");
         }
@@ -50,7 +49,7 @@ public class SessionFacade {
 
         // Step3: Try to occupy connector at station service
         try {
-            stationServiceClient.occupyConnector(connectorId, bearerToken);
+            stationServiceClient.occupyConnector(connectorId);
         } catch (Exception e) {
             // If occupy fails, delete the session (or mark as failed)
             // Since we have @Transactional, session creation will roll back automatically!
@@ -77,7 +76,7 @@ public class SessionFacade {
     }
 
     @Transactional
-    public SessionResponse stopSession(Long sessionId, BigDecimal energyKwh, String bearerToken) {
+    public SessionResponse stopSession(Long sessionId, BigDecimal energyKwh) {
         // Step 1: Get session
         ChargingSession session = sessionService.getSession(sessionId);
 
@@ -100,7 +99,7 @@ public class SessionFacade {
         ChargingSession completedSession = sessionService.completeSession(sessionId, energyKwh, cost);
 
         // Step 6: Release connector
-        stationServiceClient.releaseConnector(session.getConnectorId(), bearerToken);
+        stationServiceClient.releaseConnector(session.getConnectorId());
 
         // Step 7: Return response
         return new SessionResponse(

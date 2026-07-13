@@ -51,7 +51,6 @@ class SessionFacadeTest {
         // Arrange
         Long sessionId = 100L;
         BigDecimal energyKwh = new BigDecimal("12.5");
-        String bearerToken = "test-token";
 
         User user = new User();
         user.setId(1L);
@@ -90,7 +89,7 @@ class SessionFacadeTest {
                 .thenReturn(completedSession);
 
         // Act
-        var response = sessionFacade.stopSession(sessionId, energyKwh, bearerToken);
+        var response = sessionFacade.stopSession(sessionId, energyKwh);
 
         // Assert
         assertThat(response.sessionId()).isEqualTo(sessionId);
@@ -104,7 +103,7 @@ class SessionFacadeTest {
         verify(costCalculator).calculate(energyKwh, new BigDecimal("8.50"), new BigDecimal("2.00"));
         verify(walletService).debit(1L, new BigDecimal("108.25"));
         verify(sessionService).completeSession(sessionId, energyKwh, new BigDecimal("108.25"));
-        verify(stationServiceClient).releaseConnector(10L, bearerToken);
+        verify(stationServiceClient).releaseConnector(10L);
     }
 
     @Test
@@ -112,7 +111,6 @@ class SessionFacadeTest {
         // Arrange
         Long sessionId = 100L;
         BigDecimal energyKwh = new BigDecimal("12.5");
-        String bearerToken = "test-token";
 
         User user = new User();
         user.setId(1L);
@@ -126,13 +124,13 @@ class SessionFacadeTest {
         when(sessionService.getSession(sessionId)).thenReturn(completedSession);
 
         // Act & Assert
-        assertThatThrownBy(() -> sessionFacade.stopSession(sessionId, energyKwh, bearerToken))
+        assertThatThrownBy(() -> sessionFacade.stopSession(sessionId, energyKwh))
                 .isInstanceOf(SessionNotActiveException.class);
 
         // Verify that wallet was not debited and connector was not released
         verify(walletService, never()).debit(any(), any());
         verify(sessionService, never()).completeSession(any(), any(), any());
-        verify(stationServiceClient, never()).releaseConnector(any(), any());
+        verify(stationServiceClient, never()).releaseConnector(any());
     }
 
     @Test

@@ -3,13 +3,17 @@ package com.yusufakdogan.session_service.client;
 import com.yusufakdogan.session_service.dto.StationConnectorResponse;
 import com.yusufakdogan.session_service.exception.ConnectorOccupiedException;
 import com.yusufakdogan.session_service.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 @RequiredArgsConstructor
@@ -20,12 +24,27 @@ public class StationServiceClient {
 
     private final RestClient.Builder restClientBuilder;
 
-    public StationConnectorResponse getConnectorById(Long connectorId, String bearerToken) {
+    private RestClient getClient() {
+        return restClientBuilder
+                .baseUrl(stationServiceUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                    if (attrs != null) {
+                        HttpServletRequest servletRequest = attrs.getRequest();
+                        String authHeader = servletRequest.getHeader(HttpHeaders.AUTHORIZATION);
+                        if (authHeader != null) {
+                            request.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
+                        }
+                    }
+                    return execution.execute(request, body);
+                })
+                .build();
+    }
+
+    public StationConnectorResponse getConnectorById(Long connectorId) {
         try {
-            RestClient client = restClientBuilder.baseUrl(stationServiceUrl).build();
-            return client.get()
+            return getClient().get()
                     .uri("/connectors/{id}", connectorId)
-                    .header("Authorization", "Bearer " + bearerToken)
                     .retrieve()
                     .body(StationConnectorResponse.class);
         } catch (HttpClientErrorException e) {
@@ -36,12 +55,10 @@ public class StationServiceClient {
         }
     }
 
-    public StationConnectorResponse occupyConnector(Long connectorId, String bearerToken) {
+    public StationConnectorResponse occupyConnector(Long connectorId) {
         try {
-            RestClient client = restClientBuilder.baseUrl(stationServiceUrl).build();
-            return client.patch()
+            return getClient().patch()
                     .uri("/connectors/{id}/occupy", connectorId)
-                    .header("Authorization", "Bearer " + bearerToken)
                     .retrieve()
                     .body(StationConnectorResponse.class);
         } catch (HttpClientErrorException e) {
@@ -55,12 +72,10 @@ public class StationServiceClient {
         }
     }
 
-    public StationConnectorResponse releaseConnector(Long connectorId, String bearerToken) {
+    public StationConnectorResponse releaseConnector(Long connectorId) {
         try {
-            RestClient client = restClientBuilder.baseUrl(stationServiceUrl).build();
-            return client.patch()
+            return getClient().patch()
                     .uri("/connectors/{id}/release", connectorId)
-                    .header("Authorization", "Bearer " + bearerToken)
                     .retrieve()
                     .body(StationConnectorResponse.class);
         } catch (HttpClientErrorException e) {
