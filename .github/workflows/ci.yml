@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: dummy_secret_for_testing_purposes_only_which_must_be_long_enough
 
     steps:
       - name: Checkout repository
