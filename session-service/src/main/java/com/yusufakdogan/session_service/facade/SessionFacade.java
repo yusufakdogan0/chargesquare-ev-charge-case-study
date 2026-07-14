@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionFacade {
@@ -30,9 +32,11 @@ public class SessionFacade {
     public SessionResponse startSession(
             Long userId,
             Long connectorId) {
+        log.info("Attempting to start session for user {} on connector {}", userId, connectorId);
         // Step 1: Get connector from station service and validate status
         StationConnectorResponse connector = stationServiceClient.getConnectorById(connectorId);
         if (com.yusufakdogan.session_service.entity.enums.ConnectorStatus.OCCUPIED.name().equals(connector.status())) {
+            log.warn("Connector {} is already occupied. Cannot start session.", connectorId);
             throw new ConnectorOccupiedException("Connector " + connectorId + " is already occupied");
         }
 
@@ -49,9 +53,12 @@ public class SessionFacade {
             stationServiceClient.occupyConnector(connectorId);
         } catch (Exception e) {
             // If occupy fails, mark session as FAILED
+            log.error("Failed to occupy connector {} for session {}. Marking session as FAILED.", connectorId, session.getId(), e);
             sessionService.failSession(session.getId());
             throw e;
         }
+
+        log.info("Successfully started session {} for user {} on connector {}", session.getId(), userId, connectorId);
 
         BigDecimal walletBalance = walletService.getBalance(userId);
 
@@ -76,9 +83,12 @@ public class SessionFacade {
     public SessionResponse stopSession(Long sessionId, BigDecimal energyKwh) {
         // Step 1: Get session
         ChargingSession session = sessionService.getSession(sessionId);
+        Long userId = session.getUser().getId();
+        log.info("Attempting to stop session {} for user {} with {} kWh energy", sessionId, userId, energyKwh);
 
         // Step 2: Guard - session must be ACTIVE
         if (session.getStatus() != com.yusufakdogan.session_service.entity.enums.SessionStatus.ACTIVE) {
+            log.warn("Session {} for user {} is not ACTIVE (status: {}). Cannot stop.", sessionId, userId, session.getStatus());
             throw new SessionNotActiveException("Session " + sessionId + " is not ACTIVE and cannot be stopped");
         }
 
@@ -87,6 +97,7 @@ public class SessionFacade {
                 energyKwh,
                 session.getTariffPricePerKwh(),
                 session.getTariffStartFee());
+        log.info("Calculated cost for session {} (user {}): {} {}", sessionId, userId, cost, session.getTariffCurrency());
 
         // Step 4: Release connector
         stationServiceClient.releaseConnector(session.getConnectorId());
@@ -95,7 +106,9 @@ public class SessionFacade {
         ChargingSession completedSession = sessionService.completeSession(sessionId, energyKwh, cost);
 
         // Step 6: Debit wallet (allows negative balance)
-        BigDecimal newBalance = walletService.debit(session.getUser().getId(), cost);
+        BigDecimal newBalance = walletService.debit(userId, cost);
+
+        log.info("Successfully stopped session {} for user {}. Cost charged: {} {}", sessionId, userId, cost, session.getTariffCurrency());
 
         // Step 7: Return response
         return new SessionResponse(

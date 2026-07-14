@@ -4,11 +4,13 @@ import com.yusufakdogan.session_service.entity.User;
 import com.yusufakdogan.session_service.exception.ResourceNotFoundException;
 import com.yusufakdogan.session_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WalletService {
@@ -32,6 +34,8 @@ public class WalletService {
         user.setWalletBalance(newBalance);
         userRepository.save(user);
 
+        log.info("Debited {} from user {}. New balance: {}", amount, userId, newBalance);
+
         return newBalance;
     }
 
@@ -50,6 +54,8 @@ public class WalletService {
         BigDecimal newBalance = user.getWalletBalance().add(amount);
         user.setWalletBalance(newBalance);
         userRepository.save(user);
+
+        log.info("Topped up {} for user {}. New balance: {}", amount, userId, newBalance);
 
         return newBalance;
     }
