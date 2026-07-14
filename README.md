@@ -2,19 +2,19 @@
 
 A backend system for EV charging session management, built with **Java 21** and **Spring Boot 3.5**.
 
-## Tech Stack
+## Tech Stack & Why
 
-| Layer | Technology |
-|---|---|
-| Language | Java 21 |
-| Framework | Spring Boot 3.5.16 |
-| Security | Spring Security + JWT |
-| Database | PostgreSQL 16 |
-| Migrations | Flyway |
-| API Docs | SpringDoc OpenAPI (Swagger UI) |
-| Build | Gradle 8.14 |
-| Containers | Docker / Docker Compose |
-| Testing | JUnit 5, Testcontainers, AssertJ |
+| Layer | Technology | Reason |
+|---|---|---|
+| Language | Java 21 | Modern LTS release with records and virtual threads |
+| Framework | Spring Boot 3.5.16 | Industry standard, robust ecosystem, rapid development |
+| Security | Spring Security + JWT | Stateless, highly scalable authentication without sessions |
+| Database | PostgreSQL 16 | ACID compliant, reliable relational data store |
+| Migrations | Flyway | Predictable, version-controlled database schema evolution |
+| API Docs | SpringDoc OpenAPI | Auto-generated interactive Swagger UI |
+| Build | Gradle 8.14 | Fast, declarative, and flexible build tool |
+| Containers | Docker / Compose | Consistent environments across dev, test, and prod |
+| Testing | Testcontainers | High-fidelity testing against real database instances |
 
 ## Project Structure
 
@@ -71,13 +71,30 @@ Response:
 }
 ```
 
-### Using the Token
+### Using the Token & End-to-End Flow
 
-Include the JWT in the `Authorization` header for protected endpoints:
+Here is a 3-step end-to-end flow to authenticate, start a session, and stop it.
 
+1. **Login** to get the JWT:
 ```bash
-curl http://localhost:8081/stations \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
+curl -X POST http://localhost:8082/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin1", "password": "admin123"}'
+```
+*(Copy the `accessToken` from the response)*
+
+2. **Start a Charging Session**:
+```bash
+curl -X POST "http://localhost:8082/sessions/start?userId=4&connectorId=1" \
+  -H "Authorization: Bearer <your_access_token>"
+```
+*(Note the `id` of the created session in the response)*
+
+3. **Stop the Charging Session**:
+```bash
+# Assuming the session ID is 1, and 12.5 kWh was consumed
+curl -X POST "http://localhost:8082/sessions/1/stop?energyKwh=12.5" \
+  -H "Authorization: Bearer <your_access_token>"
 ```
 
 ### Swagger UI with JWT
@@ -124,33 +141,35 @@ docker-compose logs -f
 
 ## Available Endpoints
 
+> **Note:** Detailed request and response bodies are omitted here for brevity. Both services expose full OpenAPI specifications via Swagger UI (`/swagger-ui.html`), where you can inspect schemas and test the endpoints directly.
+
 ### Station Service (`http://localhost:8081`)
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| GET | `/actuator/health` | Health check (Actuator) | No |
-| GET | `/swagger-ui.html` | Swagger UI | No |
-| GET | `/v3/api-docs` | OpenAPI spec (JSON) | No |
-| GET | `/stations` | List all stations | Yes |
-| GET | `/stations/{id}` | Get station by ID with connectors | Yes |
-| GET | `/stations/{id}/connectors` | List connectors for a station | Yes |
-| GET | `/connectors/{id}` | Get connector by ID with tariff | Yes |
-| PATCH | `/connectors/{id}/occupy` | Mark connector as occupied (Admin only) | Yes |
-| PATCH | `/connectors/{id}/release` | Mark connector as available (Admin only) | Yes |
+| Method | Endpoint | Description | Auth Required | HTTP Status Codes |
+|---|---|---|---|---|
+| GET | `/actuator/health` | Health check (Actuator) | No | **200** (OK) |
+| GET | `/swagger-ui.html` | Swagger UI | No | **200** (OK) |
+| GET | `/v3/api-docs` | OpenAPI spec (JSON) | No | **200** (OK) |
+| GET | `/stations` | List all stations | Yes | **200** (OK), **401** (Unauthorized) |
+| GET | `/stations/{id}` | Get station by ID with connectors | Yes | **200** (OK), **401** (Unauthorized), **404** (Not Found) |
+| GET | `/stations/{id}/connectors` | List connectors for a station | Yes | **200** (OK), **401** (Unauthorized), **404** (Not Found) |
+| GET | `/connectors/{id}` | Get connector by ID with tariff | Yes | **200** (OK), **401** (Unauthorized), **404** (Not Found) |
+| PATCH | `/connectors/{id}/occupy` | Mark connector as occupied (Admin only) | Yes | **200** (OK), **401** (Unauthorized), **403** (Forbidden), **404** (Not Found), **409** (Conflict) |
+| PATCH | `/connectors/{id}/release` | Mark connector as available (Admin only) | Yes | **200** (OK), **401** (Unauthorized), **403** (Forbidden), **404** (Not Found), **409** (Conflict) |
 
 ### Session Service (`http://localhost:8082`)
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| GET | `/actuator/health` | Health check (Actuator) | No |
-| GET | `/swagger-ui.html` | Swagger UI | No |
-| GET | `/v3/api-docs` | OpenAPI spec (JSON) | No |
-| POST | `/auth/login` | Login and get JWT token | No |
-| POST | `/sessions/start` | Start new charging session (Admin only) | Yes |
-| POST | `/sessions/{id}/stop` | Stop charging session, calculate cost, debit wallet (Admin only) | Yes |
-| GET | `/sessions/{id}` | Get session by ID | Yes |
-| GET | `/users/{userId}/sessions` | Get all sessions for a user | Yes |
-| PUT | `/users/{userId}/wallet/top-up` | Top up user wallet (Admin only) | Yes |
+| Method | Endpoint | Description | Auth Required | HTTP Status Codes |
+|---|---|---|---|---|
+| GET | `/actuator/health` | Health check (Actuator) | No | **200** (OK) |
+| GET | `/swagger-ui.html` | Swagger UI | No | **200** (OK) |
+| GET | `/v3/api-docs` | OpenAPI spec (JSON) | No | **200** (OK) |
+| POST | `/auth/login` | Login and get JWT token | No | **200** (OK), **401** (Unauthorized for invalid creds) |
+| POST | `/sessions/start` | Start new charging session (Admin only) | Yes | **200** (OK), **401** (Unauthorized), **403** (Forbidden), **404** (Not Found), **409** (Conflict) |
+| POST | `/sessions/{id}/stop` | Stop charging session, calculate cost, debit wallet (Admin only) | Yes | **200** (OK), **401** (Unauthorized), **403** (Forbidden), **404** (Not Found), **409** (Conflict) |
+| GET | `/sessions/{id}` | Get session by ID | Yes | **200** (OK), **401** (Unauthorized), **404** (Not Found) |
+| GET | `/users/{userId}/sessions` | Get all sessions for a user | Yes | **200** (OK), **401** (Unauthorized), **404** (Not Found) |
+| PUT | `/users/{userId}/wallet/top-up` | Top up user wallet (Admin only) | Yes | **200** (OK), **400** (Bad Request), **401** (Unauthorized), **403** (Forbidden), **404** (Not Found) |
 
 ## Configuration
 
@@ -246,3 +265,19 @@ cd session-service
 | Session | `SessionFacadeTest` | 3 | Stop session flow orchestration, session retrieval |
 | Session | `SessionControllerSecurityTest` | 1 | Security configuration test |
 | **Total** | | **68** | |
+
+## Assumptions
+- **Currency**: Assumed a single currency (`TRY`) for the scope of the case study, though the database stores currency codes.
+- **Negative Balances**: Users are allowed to go into debt (negative wallet balance) after a session completes, but cannot start a new session if their balance is negative.
+- **Authentication**: JWT tokens are sufficient for this system without a complex revocation strategy (e.g., redis blocklist) to keep it minimal.
+- **Connectors**: A connector can only host one session at a time, and a user can only charge at one connector at a time.
+- **Money Handling**: Money uses a decimal-safe type (`BigDecimal`) to avoid floating-point inaccuracies, with the final cost strictly rounded to 2 decimals using `RoundingMode.HALF_UP`.
+
+## Time Spent & What I'd Do Next
+- **Time Spent**: ~15-20 hours designing the schema, building the two microservices, writing tests, configuring security, and setting up Kubernetes manifests.
+*(Note: The provided Kubernetes manifests in `k8s/` were successfully validated with `kubectl apply --dry-run=client`)*
+- **What I'd Do Next**:
+  - Implement a messaging queue (RabbitMQ/Kafka) for asynchronous communication between services instead of synchronous REST calls.
+  - Introduce an API Gateway to route requests and handle authentication centrally.
+  - Add integration with an external payment provider (e.g., Stripe) for wallet top-ups.
+  - Add comprehensive metrics (Micrometer/Prometheus) and distributed tracing (Zipkin/Jaeger) for better observability.

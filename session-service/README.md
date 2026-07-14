@@ -48,6 +48,9 @@ This service manages users, charging sessions, and handles authentication/author
 ## Configuration
 All configuration via environment variables (see root README's .env.example file).
 
+## Money Handling
+Money uses a decimal-safe type (`BigDecimal` rather than naive float) for exact precision, with the final cost strictly rounded to 2 decimal places using `RoundingMode.HALF_UP`.
+
 ## Testing
 Run tests with:
 ```bash
