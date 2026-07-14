@@ -27,14 +27,12 @@ public class SessionFacade {
     private final CostCalculator costCalculator;
     private final WalletService walletService;
 
-    @Transactional
     public SessionResponse startSession(
             Long userId,
-            Long connectorId
-    ) {
+            Long connectorId) {
         // Step 1: Get connector from station service and validate status
         StationConnectorResponse connector = stationServiceClient.getConnectorById(connectorId);
-        if ("OCCUPIED".equals(connector.status())) {
+        if (com.yusufakdogan.session_service.entity.enums.ConnectorStatus.OCCUPIED.name().equals(connector.status())) {
             throw new ConnectorOccupiedException("Connector " + connectorId + " is already occupied");
         }
 
@@ -44,17 +42,18 @@ public class SessionFacade {
                 connectorId,
                 connector.tariff().pricePerKwh(),
                 connector.tariff().startFee(),
-                connector.tariff().currency()
-        );
+                connector.tariff().currency());
 
         // Step3: Try to occupy connector at station service
         try {
             stationServiceClient.occupyConnector(connectorId);
         } catch (Exception e) {
-            // If occupy fails, delete the session (or mark as failed)
-            // Since we have @Transactional, session creation will roll back automatically!
+            // If occupy fails, mark session as FAILED
+            sessionService.failSession(session.getId());
             throw e;
         }
+
+        BigDecimal walletBalance = walletService.getBalance(userId);
 
         // Step4: Return session response
         return new SessionResponse(
@@ -66,13 +65,11 @@ public class SessionFacade {
                 null, // energyKwh - null for active sessions
                 null, // cost - null for active sessions
                 null, // currency - null for active sessions
-                session.getUser().getWalletBalance(),
+                walletBalance,
                 new TariffSnapshotDto(
                         session.getTariffPricePerKwh(),
                         session.getTariffStartFee(),
-                        session.getTariffCurrency()
-                )
-        );
+                        session.getTariffCurrency()));
     }
 
     @Transactional
@@ -89,17 +86,16 @@ public class SessionFacade {
         BigDecimal cost = costCalculator.calculate(
                 energyKwh,
                 session.getTariffPricePerKwh(),
-                session.getTariffStartFee()
-        );
+                session.getTariffStartFee());
 
-        // Step 4: Debit wallet (allows negative balance)
-        BigDecimal newBalance = walletService.debit(session.getUser().getId(), cost);
+        // Step 4: Release connector
+        stationServiceClient.releaseConnector(session.getConnectorId());
 
         // Step 5: Complete session
         ChargingSession completedSession = sessionService.completeSession(sessionId, energyKwh, cost);
 
-        // Step 6: Release connector
-        stationServiceClient.releaseConnector(session.getConnectorId());
+        // Step 6: Debit wallet (allows negative balance)
+        BigDecimal newBalance = walletService.debit(session.getUser().getId(), cost);
 
         // Step 7: Return response
         return new SessionResponse(
@@ -115,9 +111,7 @@ public class SessionFacade {
                 new TariffSnapshotDto(
                         completedSession.getTariffPricePerKwh(),
                         completedSession.getTariffStartFee(),
-                        completedSession.getTariffCurrency()
-                )
-        );
+                        completedSession.getTariffCurrency()));
     }
 
     @Transactional(readOnly = true)
@@ -149,8 +143,6 @@ public class SessionFacade {
                 new TariffSnapshotDto(
                         session.getTariffPricePerKwh(),
                         session.getTariffStartFee(),
-                        session.getTariffCurrency()
-                )
-        );
+                        session.getTariffCurrency()));
     }
 }

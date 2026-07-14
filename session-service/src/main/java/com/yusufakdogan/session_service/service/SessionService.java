@@ -62,6 +62,14 @@ public class SessionService {
     }
 
     @Transactional
+    public void failSession(Long sessionId) {
+        ChargingSession session = getSession(sessionId);
+        session.setStatus(SessionStatus.FAILED);
+        session.setEndedAt(Instant.now());
+        sessionRepository.save(session);
+    }
+
+    @Transactional
     public ChargingSession completeSession(Long sessionId, BigDecimal energyKwh, BigDecimal cost) {
         ChargingSession session = getSession(sessionId);
 
