@@ -1,0 +1,11 @@
+# This ConfigMap stores the non-secret configuration variables shared between the services.
+# It holds the database name and user, which are needed by PostgreSQL and the application services.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chargesquare-config
+  labels:
+    app: chargesquare
+data:
+  POSTGRES_DB: "chargesquare"
+  POSTGRES_USER: "postgres"

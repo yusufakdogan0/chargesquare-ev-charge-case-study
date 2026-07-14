@@ -1,0 +1,52 @@
+# This manifest deploys PostgreSQL.
+# It uses a minimum configuration using a Deployment and exposes it internally via a ClusterIP Service.
+# PersistentVolumes are omitted as per the case study minimum constraints.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine # Consistent with user instruction
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: chargesquare-config
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: chargesquare-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              value: "PLACEHOLDER_CHANGE_ME" # Placeholder since Secrets are not used
+---
+# The Service exposes PostgreSQL internally to the other pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

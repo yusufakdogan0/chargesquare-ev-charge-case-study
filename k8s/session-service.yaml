@@ -1,0 +1,54 @@
+# This manifest deploys the session-service application.
+# It uses the locally built Docker image and exposes the service internally via a ClusterIP.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: session-service
+  labels:
+    app: session-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: session-service
+  template:
+    metadata:
+      labels:
+        app: session-service
+    spec:
+      containers:
+        - name: session-service
+          image: session-service:latest
+          imagePullPolicy: Never # Forces Kubernetes to use the local image instead of pulling from a registry
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/chargesquare"
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: chargesquare-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              value: "PLACEHOLDER_CHANGE_ME" # Placeholder since Secrets are not used
+            - name: JWT_SECRET
+              value: "PLACEHOLDER_CHANGE_ME" # Placeholder since Secrets are not used
+            - name: STATION_SERVICE_URL
+              value: "http://station-service:8081"
+---
+# The Service exposes session-service internally to the other pods.
+# Port forwarding can be used to access this externally.
+apiVersion: v1
+kind: Service
+metadata:
+  name: session-service
+  labels:
+    app: session-service
+spec:
+  type: ClusterIP # Uses ClusterIP as it is not required to be exposed externally
+  selector:
+    app: session-service
+  ports:
+    - port: 8082
+      targetPort: 8082
